@@ -1,10 +1,12 @@
+import json
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect, HttpResponse
 from django.template.context import RequestContext
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
-from django.views.generic.base import TemplateView
+from django.views.generic.base import TemplateView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from minibadge.forms import AwardBadgeForm
@@ -64,6 +66,28 @@ class ClaimBadgesView(TemplateView):
 
   def get_context_data(self, email):
     context = super(ClaimBadgesView, self).get_context_data(email=email)
-    context['awards'] = Award.objects.filter(email=email)
+    context['awards'] = json.dumps([award.get_assertion_url() for award in Award.objects.filter(email=email)])
 
     return context
+
+class AssertionView(View):
+  def get(self, request, *args, **kwargs):
+    award = Award.objects.get(slug=kwargs['slug'])
+    assertion = {
+      "recipient": award.email,
+      "badge": {
+        "version": "0.0.1",
+        "name": award.badge.title,
+        "image": str(award.badge.image), # TODO: needs to be a full path
+        "description": award.badge.description,
+        "criteria": reverse('minibadge.badge_detail', args=(award.badge.slug,)),
+        "issuer": {
+          # TODO: move these out to django config
+          "origin": "http://www.youngrewiredstate.org",
+          "name": "Young Rewired State",
+          "org": "Not sure what goes here", # TODO: find out what goes here
+          "contact": "rob@roryoung.co.uk"
+        }
+      }
+    }
+    return HttpResponse(json.dumps(assertion), mimetype="application/json")

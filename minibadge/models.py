@@ -1,3 +1,6 @@
+import base64
+from datetime import datetime
+import hashlib
 from django.core.urlresolvers import reverse
 import os
 from urlparse import urljoin
@@ -76,7 +79,8 @@ class Award(models.Model):
   objects = AwardManager()
 
   badge = models.ForeignKey(Badge)
-  email = models.EmailField(blank=True, null=True, db_index=True)
+  email = models.EmailField(blank=False, db_index=True)
+  slug  = models.CharField(max_length=5, blank=False, unique=True)
 
   created_at = models.DateTimeField(auto_now_add=True, blank=False)
   updated_at = models.DateTimeField(auto_now=True, blank=False)
@@ -84,6 +88,20 @@ class Award(models.Model):
   def __str__(self):
     return "Award of %s to %s" % (self.badge.title, self.email)
 
-  # TODO: needs to actually return a url
-  def get_claim_url(self):
-    return "CLAIM URL"
+  # TODO: needs to actually return a full url
+  def get_assertion_url(self):
+    return reverse("minibadge.assertion", args=(self.slug,))
+
+  def get_new_slug(self):
+    m = hashlib.md5()
+    m.update("%s%s" % (datetime.now(), self.email))
+    slug = base64.urlsafe_b64encode(m.digest()).rstrip("=")[:5]
+    # check the slug isn't already taken
+    if len(Award.objects.filter(slug=slug)):
+      return self.get_new_slug()
+    return slug
+
+  def save(self, *args, **kwargs):
+    if not self.slug:
+      self.slug = self.get_new_slug()
+    return super(Award, self).save(*args, **kwargs)

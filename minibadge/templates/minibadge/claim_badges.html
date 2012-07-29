@@ -3,7 +3,8 @@
 {% block content %}
     <script src="http://beta.openbadges.org/issuer.js"></script>
     <script type="text/javascript">
+        OpenBadges.issue({{ awards|safe }}, function(errors, successes) {
 
+        });
     </script>
-    {% for award in awards %}{{ award }}{% if not forloop.first %},{% endif %}{% endfor %}
 {% endblock %}
