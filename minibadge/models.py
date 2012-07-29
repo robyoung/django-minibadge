@@ -71,6 +71,7 @@ class Badge(models.Model):
 class AwardManager(models.Manager):
   pass
 
+# TODO: needs hash on creation to use in url
 class Award(models.Model):
   objects = AwardManager()
 
@@ -79,3 +80,10 @@ class Award(models.Model):
 
   created_at = models.DateTimeField(auto_now_add=True, blank=False)
   updated_at = models.DateTimeField(auto_now=True, blank=False)
+
+  def __str__(self):
+    return "Award of %s to %s" % (self.badge.title, self.email)
+
+  # TODO: needs to actually return a url
+  def get_claim_url(self):
+    return "CLAIM URL"

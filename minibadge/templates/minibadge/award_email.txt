@@ -1,0 +1,7 @@
+Hi,
+
+You received the {{ badge.title }} badge. Claim it at {{ award.get_claim_url }}
+
+Happy Coding!
+
+From the YRS Team
