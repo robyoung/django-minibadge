@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>All Badges</h1>
+    <ul>
+        {% for badge in badge_list %}
+            <li><a href="{{ badge.get_absolute_url }}">{{ badge.title }}</a></li>
+        {% endfor %}
+    </ul>
+{% endblock %}

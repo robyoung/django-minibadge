@@ -1,3 +1,4 @@
+from django.core.urlresolvers import reverse
 import os
 from urlparse import urljoin
 from time import time
@@ -50,6 +51,21 @@ class Badge(models.Model):
 
   def get_upload_meta(self):
     return ("badge", self.slug)
+
+  def get_absolute_url(self):
+    return reverse('minibadge.badge_detail', args=(self.slug,))
+
+  def allows_award_to(self, user):
+    if None == user:
+      return True
+    if user.is_anonymous():
+      return False
+    if user.is_staff or user.is_superuser:
+      return True
+    if user == self.creator:
+      return True
+
+    return False
 
 
 class AwardManager(models.Manager):
