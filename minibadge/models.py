@@ -1,0 +1,65 @@
+import os
+from urlparse import urljoin
+from time import time
+import random
+
+from django.conf import settings
+from django.db import models
+from django.core.files.storage import FileSystemStorage
+from django.contrib.auth.models import User
+
+
+UPLOADS_ROOT = getattr(settings, 'BADGER_UPLOADS_ROOT',
+  os.path.join(getattr(settings, 'MEDIA_ROOT', 'media/'), 'uploads'))
+UPLOADS_URL = getattr(settings, 'BADGER_UPLOADS_URL',
+  urljoin(getattr(settings, 'MEDIA_URL', '/media/'), 'uploads/'))
+BADGE_UPLOADS_FS = FileSystemStorage(location=UPLOADS_ROOT,
+  base_url=UPLOADS_URL)
+
+MK_UPLOAD_TMPL = '%(base)s/%(field_fn)s_%(slug)s_%(now)s_%(rand)04d.%(ext)s'
+
+def mk_upload_to(field_fn, ext, tmpl=MK_UPLOAD_TMPL):
+  """upload_to builder for file upload fields"""
+  def upload_to(instance, filename):
+    base, slug = instance.get_upload_meta()
+    return tmpl % dict(now=int(time()), rand=random.randint(0, 1000),
+      slug=slug[:50], base=base, field_fn=field_fn,
+      ext=ext)
+  return upload_to
+
+
+class BadgeManager(models.Manager):
+  pass
+
+class Badge(models.Model):
+  objects = BadgeManager()
+
+  title = models.CharField(max_length=255, blank=False, unique=True,
+    help_text="Short, descriptive title")
+  slug = models.SlugField(blank=False, unique=True,
+    help_text="Very short name, for use in URLs and links")
+  description = models.TextField(blank=True,
+    help_text="Longer description of the badge and its criteria")
+  image = models.ImageField(blank=True, null=True,
+    storage=BADGE_UPLOADS_FS, upload_to=mk_upload_to('image','png'),
+    help_text="Upload an image to represent the badge")
+  creator = models.ForeignKey(User, blank=True, null=True)
+
+  created_at = models.DateTimeField(auto_now_add=True, blank=False)
+  updated_at = models.DateTimeField(auto_now=True, blank=False)
+
+  def get_upload_meta(self):
+    return ("badge", self.slug)
+
+
+class AwardManager(models.Manager):
+  pass
+
+class Award(models.Model):
+  objects = AwardManager()
+
+  badge = models.ForeignKey(Badge)
+  email = models.EmailField(blank=True, null=True, db_index=True)
+
+  created_at = models.DateTimeField(auto_now_add=True, blank=False)
+  updated_at = models.DateTimeField(auto_now=True, blank=False)
