@@ -7,5 +7,6 @@ urlpatterns = patterns('minibadge.views',
   url(r'^badge/(?P<slug>[^/]+)$', BadgeDetailView.as_view(), name="minibadge.badge_detail"),
   url(r'^badge/(?P<slug>[^/]+)/award$', AwardBadgeView.as_view(), name="minibadge.award_badge"),
   url(r'^claim/(?P<email>[^/]+)$', ClaimBadgesView.as_view(), name="minibadge.claim_badges"),
-  url(r'^assertion/(?P<slug>[^/]+)\.json$', AssertionView.as_view(), name="minibadge.assertion")
+  url(r'^assertion/(?P<slug>[^/]+)\.json$', AssertionView.as_view(format="json"), name="minibadge.assertion.json"),
+  url(r'^assertion/(?P<slug>[^/]+)$', AssertionView.as_view(format="html"), name="minibadge.assertion.html"),
 )

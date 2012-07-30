@@ -1,6 +1,8 @@
 import base64
 from datetime import datetime
 import hashlib
+import uuid
+from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 import os
 from urlparse import urljoin
@@ -12,10 +14,12 @@ from django.db import models
 from django.core.files.storage import FileSystemStorage
 from django.contrib.auth.models import User
 
+OBI_VERSION = "0.5.0"
+BADGE_ISSUER = getattr(settings, "MINIBADGE_ISSUER")
 
-UPLOADS_ROOT = getattr(settings, 'BADGER_UPLOADS_ROOT',
+UPLOADS_ROOT = getattr(settings, 'MINIBADGE_UPLOADS_ROOT',
   os.path.join(getattr(settings, 'MEDIA_ROOT', 'media/'), 'uploads'))
-UPLOADS_URL = getattr(settings, 'BADGER_UPLOADS_URL',
+UPLOADS_URL = getattr(settings, 'MINIBADGE_UPLOADS_URL',
   urljoin(getattr(settings, 'MEDIA_URL', '/media/'), 'uploads/'))
 BADGE_UPLOADS_FS = FileSystemStorage(location=UPLOADS_ROOT,
   base_url=UPLOADS_URL)
@@ -31,6 +35,11 @@ def mk_upload_to(field_fn, ext, tmpl=MK_UPLOAD_TMPL):
       ext=ext)
   return upload_to
 
+def _truncate(content, length=128):
+  if len(content) <= length:
+    return content
+  else:
+    return ' '.join(content[:length+1].split(' ')[:-1])
 
 class BadgeManager(models.Manager):
   pass
@@ -70,11 +79,28 @@ class Badge(models.Model):
 
     return False
 
+  def as_obi_serialization(self, request=None):
+    """Produce an Open Badge Infrastructure serialization of this badge"""
+    if request:
+      base_url = request.build_absolute_uri('/')[:-1]
+    else:
+      base_url = 'http://%s' % (Site.objects.get_current().domain,)
+
+    # this differs from Badger as we only have a single issuer and we must have an image
+    return {
+      "version": OBI_VERSION,
+      "name": _truncate(self.title, 128),
+      "description": _truncate(self.description, 128),
+      # todo: should it be possible to set up the criteria url as somewhere else?
+      "criteria": urljoin(base_url, self.get_absolute_url()),
+      "issuer": BADGE_ISSUER,
+      "image": urljoin(base_url, self.image.url)
+    }
+
 
 class AwardManager(models.Manager):
   pass
 
-# TODO: needs hash on creation to use in url
 class Award(models.Model):
   objects = AwardManager()
 
@@ -89,7 +115,7 @@ class Award(models.Model):
     return "Award of %s to %s" % (self.badge.title, self.email)
 
   # TODO: needs to actually return a full url
-  def get_assertion_url(self):
+  def get_absolute_url(self):
     return reverse("minibadge.assertion", args=(self.slug,))
 
   def get_new_slug(self):
@@ -105,3 +131,30 @@ class Award(models.Model):
     if not self.slug:
       self.slug = self.get_new_slug()
     return super(Award, self).save(*args, **kwargs)
+
+  def as_obi_assertion(self, request=None):
+    badge_data = self.badge.as_obi_serialization(request)
+
+    if request:
+      base_url = request.build_absolute_uri('/')[:-1]
+    else:
+      base_url = 'http://%s' % (Site.objects.get_current().domain,)
+
+    recipient, salt = self._get_recipient()
+
+    return {
+      "recipient": recipient,
+      "salt": salt,
+      # todo: should we allow something custom?
+      "evidence": urljoin(base_url, self.get_absolute_url()),
+      "issued_on": self.created_at.strftime('%Y-%m-%d'),
+      "badge": badge_data
+    }
+
+  def _get_recipient(self):
+    hash_salt = hashlib.md5("%s%s" % (uuid.uuid4(), self.pk)).hexdigest()
+
+    recipient_text = '%s%s' % (self.email, hash_salt)
+    recipient_hash = 'sha256$%s' % hashlib.sha256(recipient_text).hexdigest()
+
+    return recipient_hash, hash_salt
