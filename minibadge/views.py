@@ -1,4 +1,5 @@
 import json
+from urlparse import urljoin
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
@@ -67,9 +68,15 @@ class ClaimBadgesView(TemplateView):
 
   def get_context_data(self, email):
     context = super(ClaimBadgesView, self).get_context_data(email=email)
-    context['awards'] = json.dumps([award.get_absolute_url() for award in Award.objects.filter(email=email)])
+    context['awards'] = json.dumps([self.award_url(award) for award in self.awards(email)])
 
     return context
+
+  def awards(self, email):
+    return Award.objects.filter(email=email)
+
+  def award_url(self, award):
+    return urljoin(self.request.build_absolute_uri('/')[:-1], award.get_absolute_url("json"))
 
 class AssertionView(TemplateView):
   template_name = "minibadge/award_detail.html"

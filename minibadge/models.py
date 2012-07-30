@@ -93,6 +93,7 @@ class Badge(models.Model):
       "description": _truncate(self.description, 128),
       # todo: should it be possible to set up the criteria url as somewhere else?
       "criteria": urljoin(base_url, self.get_absolute_url()),
+      # todo: should some of this be provided by the creator model?
       "issuer": BADGE_ISSUER,
       "image": urljoin(base_url, self.image.url)
     }
@@ -114,9 +115,8 @@ class Award(models.Model):
   def __str__(self):
     return "Award of %s to %s" % (self.badge.title, self.email)
 
-  # TODO: needs to actually return a full url
-  def get_absolute_url(self):
-    return reverse("minibadge.assertion", args=(self.slug,))
+  def get_absolute_url(self, format="json"):
+    return reverse("minibadge.assertion.%s" % format, args=(self.slug,))
 
   def get_new_slug(self):
     m = hashlib.md5()
