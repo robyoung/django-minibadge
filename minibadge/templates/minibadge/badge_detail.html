@@ -4,7 +4,7 @@
 {% block content %}
     <h1>{{ badge.title }}</h1>
 
-    <img src="{{ badge.image }}" alt="">
+    <img src="{{ MEDIA_URL }}{{ badge.image }}" alt="">
 
     <p>{{ badge.description }}</p>
 
