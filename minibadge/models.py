@@ -127,7 +127,7 @@ class Award(models.Model):
     else:
       base_url = 'http://%s' % (Site.objects.get_current().domain,)
 
-    return "%s/%s" % (base_url, self.email)
+    return "%s/claim/%s" % (base_url, self.email)
 
   def get_new_slug(self):
     m = hashlib.md5()
