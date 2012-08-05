@@ -9,10 +9,10 @@
 
 <ul>
     {% for award in awards %}
-        <li>{{ award.badge.title }}</li>
+        <li style="font-size: 1.2em">{{ award.badge.title }}</li>
     {% endfor %}
 </ul>
 
-<p><a href="{{ awards.0.get_claim_url }}">Claim your badges</a></p>
+<h3><a href="{{ awards.0.get_claim_url }}">Claim your badges</a></h3>
 </body>
 </html>
