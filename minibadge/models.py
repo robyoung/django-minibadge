@@ -3,7 +3,10 @@ from datetime import datetime
 import hashlib
 import uuid
 from django.contrib.sites.models import Site
+from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
+from django.template.context import RequestContext
+from django.template.loader import render_to_string
 import os
 from urlparse import urljoin
 from time import time
@@ -158,3 +161,10 @@ class Award(models.Model):
     recipient_hash = 'sha256$%s' % hashlib.sha256(recipient_text).hexdigest()
 
     return recipient_hash, hash_salt
+
+  def send(self):
+    context = {"badge": self.badge, "award": self}
+    body = render_to_string("minibadge/award_email.txt", {}, context)
+    send_mail("You've achieved a YRS badge!", body, settings.DEFAULT_FROM_EMAIL,
+      [self.email], fail_silently=True
+    )

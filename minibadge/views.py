@@ -2,13 +2,12 @@ import json
 from urlparse import urljoin
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
-from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.context import RequestContext
 from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
-from django.views.generic.base import TemplateView, View
+from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from minibadge.forms import AwardBadgeForm
@@ -46,11 +45,7 @@ class AwardBadgeView(DetailView):
 
         # send emails
         for award in awards:
-          local_context = dict(context.items() + [('award', award)])
-          body = render_to_string('minibadge/award_email.txt', {}, RequestContext(self.request, local_context))
-          send_mail("You've achieved a YRS badge!", body, settings.DEFAULT_FROM_EMAIL,
-            [award.email], fail_silently=False
-          )
+          award.send()
 
         return HttpResponseRedirect("/")
     else:
