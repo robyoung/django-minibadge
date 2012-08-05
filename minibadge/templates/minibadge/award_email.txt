@@ -1,7 +1,7 @@
-Hi,
+You've been awarded {{ awards|length }} badges!
 
-You received the {{ badge.title }} badge. Claim it at {{ award.get_claim_url }}
+{% for award in awards %}
+ - {{ award.badge.title }}
+{% endfor %}
 
-Happy Coding!
-
-From the YRS Team
+Claim your badges here {{ awards.0.get_claim_url }}

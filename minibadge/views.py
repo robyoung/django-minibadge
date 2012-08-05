@@ -1,18 +1,15 @@
 import json
 from urlparse import urljoin
 from django.contrib.auth.decorators import login_required
-from django.core.mail import send_mail
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404
-from django.template.context import RequestContext
-from django.template.loader import render_to_string
 from django.utils.decorators import method_decorator
 from django.views.generic.base import TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from minibadge.forms import AwardBadgeForm
 from minibadge.models import Badge, Award
-from django.conf import settings
+import minibadge.mailer
 
 class BadgeListView(ListView):
   template_name = 'minibadge/badge_list.html'
@@ -44,8 +41,8 @@ class AwardBadgeView(DetailView):
           awards.append(Award.objects.create(badge=badge, email=email))
 
         # send emails
-        for award in awards:
-          award.send()
+        for email in set(award.email for award in awards):
+          minibadge.mailer.send(email)
 
         return HttpResponseRedirect("/")
     else:

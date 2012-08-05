@@ -121,6 +121,14 @@ class Award(models.Model):
   def get_absolute_url(self, format="json"):
     return reverse("minibadge.assertion.%s" % format, args=(self.slug,))
 
+  def get_claim_url(self, request=None):
+    if request:
+      base_url = request.build_absolute_uri('/')[:-1]
+    else:
+      base_url = 'http://%s' % (Site.objects.get_current().domain,)
+
+    return "%s/%s" % (base_url, self.email)
+
   def get_new_slug(self):
     m = hashlib.md5()
     m.update("%s%s" % (datetime.now(), self.email))

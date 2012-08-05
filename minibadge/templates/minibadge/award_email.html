@@ -1,0 +1,18 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <title></title>
+</head>
+<body>
+<h1>You've been awarded {{ awards|length }} badges!</h1>
+
+<ul>
+    {% for award in awards %}
+        <li>{{ award.badge.title }}</li>
+    {% endfor %}
+</ul>
+
+<p><a href="{{ awards.0.get_claim_url }}">Claim your badges</a></p>
+</body>
+</html>
