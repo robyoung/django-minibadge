@@ -10,6 +10,8 @@ def send(email):
   text_content = render_to_string("minibadge/award_email.txt", context)
   html_content = render_to_string("minibadge/award_email.html", context)
 
-  message = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email])
+  headers = {"Reply-To": settings.DEFAULT_REPLY_EMAIL}
+
+  message = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [email], headers=headers)
   message.attach_alternative(html_content, "text/html")
   message.send()
